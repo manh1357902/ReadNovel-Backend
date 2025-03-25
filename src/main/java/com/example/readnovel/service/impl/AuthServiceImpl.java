@@ -28,9 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -43,15 +43,19 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private static final String CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private final RedisTemplate<String, Object> redisTemplate;
-    private static final long expiration = 604800000;
     @Override
     public ResponseEntity<Object> login(LoginRequest loginRequest) {
+        if(!userRepository.existsByEmail(loginRequest.getEmail())) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.builder()
+                    .code(HttpStatus.NOT_FOUND.value())
+                    .message(Message.EMAIL_NOT_FOUND)
+                    .build());
+        }
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
             User user = ((CustomUserDetails) authentication.getPrincipal()).getUser();
             String accessToken = jwtUtils.generateAccessToken(user.getEmail());
-            String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
-            redisTemplate.opsForValue().set("refresh_token_"+ user.getEmail(), refreshToken, expiration, TimeUnit.SECONDS);
+            String refreshToken = jwtUtils.generateRefreshToken(user.getEmail(), null);
             UserResponse userResponse = userMapper.toUserResponse(user);
             LoginResponse loginResponse = LoginResponse.builder()
                     .user(userResponse)
@@ -118,9 +122,9 @@ public class AuthServiceImpl implements AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         String email = jwtUtils.getEmailFromToken(refreshToken, true);
-        String storedToken = (String) redisTemplate.opsForValue().get("refresh_token_"+ email);
-
-        if (storedToken == null || !storedToken.equals(refreshToken)) {
+        List<String> storedTokens = (List<String>) redisTemplate.opsForValue().get("black_list_refresh_token_"+ email);
+        Date expirationDateRefreshToken = jwtUtils.getExpirationDateFromToken(refreshToken,true);
+        if (storedTokens == null || storedTokens.contains(tokenRequest.getRefreshToken())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.builder()
                     .code(HttpStatus.UNAUTHORIZED.value())
                     .message(Message.FAILED)
@@ -129,11 +133,12 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException(Message.EMAIL_NOT_FOUND));
         String newAccessToken = jwtUtils.generateAccessToken(user.getEmail());
+        String newRefreshToken = jwtUtils.generateRefreshToken(user.getEmail(), expirationDateRefreshToken);
         UserResponse userResponse = userMapper.toUserResponse(user);
         LoginResponse loginResponse = LoginResponse.builder()
                 .user(userResponse)
                 .accessToken(newAccessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(newRefreshToken)
                 .build();
         return ResponseEntity.ok(loginResponse);
     }
