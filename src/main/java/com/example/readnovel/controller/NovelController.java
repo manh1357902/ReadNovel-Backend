@@ -1,25 +1,47 @@
 package com.example.readnovel.controller;
 
-import com.example.readnovel.models.entity.Novel;
+import com.example.readnovel.payload.request.FilterNovelNewsRequest;
+import com.example.readnovel.payload.request.NovelCreateRequest;
+import com.example.readnovel.payload.request.NovelUpdateRequest;
 import com.example.readnovel.service.NovelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.awt.print.Book;
-import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/")
+@RequestMapping("/api/novels/")
 public class NovelController {
 
     private final NovelService novelService;
-     @GetMapping("user/novels")
-     public ResponseEntity<List<Novel>> getAllBooks() {
-         List<Novel> novels = novelService.getAllNovels();
-         return ResponseEntity.ok(novels);
-     }
+
+    @GetMapping("filter")
+    public ResponseEntity<Object> getNovelFilter(@RequestBody FilterNovelNewsRequest request) {
+        return novelService.getNovelFilter(request);
+    }
+
+    @GetMapping("new-chapter")
+    public ResponseEntity<Object> getNovelNewUpdate(@RequestParam(name = "page", defaultValue = "1") int page,
+                                                    @RequestParam(name = "size", defaultValue = "20") int size) {
+        return novelService.getNovelNewUpdate(page - 1, size);
+    }
+
+    @PostMapping("create")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Object> createNovel(@ModelAttribute NovelCreateRequest novelRequest) {
+        return novelService.createdNovel(novelRequest);
+    }
+
+    @PutMapping("update/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Object> updateNovel(@PathVariable(name = "id") Long id, @ModelAttribute NovelUpdateRequest novelRequest) {
+        return novelService.updateNovel(id, novelRequest);
+    }
+
+    @DeleteMapping("delete/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<Object> deleteNovel(@PathVariable(name = "id") Long id) {
+        return novelService.deleteNovel(id);
+    }
 }

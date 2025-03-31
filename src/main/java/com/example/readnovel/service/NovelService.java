@@ -1,10 +1,14 @@
 package com.example.readnovel.service;
 
-import com.example.readnovel.models.entity.Novel;
-import com.example.readnovel.payload.response.NovelResponse;
-
-import java.util.List;
+import com.example.readnovel.payload.request.FilterNovelNewsRequest;
+import com.example.readnovel.payload.request.NovelCreateRequest;
+import com.example.readnovel.payload.request.NovelUpdateRequest;
+import org.springframework.http.ResponseEntity;
 
 public interface NovelService {
-    List<Novel> getAllNovels();
+    ResponseEntity<Object> getNovelNewUpdate(int page, int size);
+    ResponseEntity<Object> getNovelFilter(FilterNovelNewsRequest request);
+    ResponseEntity<Object> createdNovel(NovelCreateRequest novelRequest);
+    ResponseEntity<Object> updateNovel(Long id, NovelUpdateRequest novelRequest);
+    ResponseEntity<Object> deleteNovel(Long id);
 }

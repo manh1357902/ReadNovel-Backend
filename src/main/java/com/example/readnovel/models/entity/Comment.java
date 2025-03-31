@@ -14,6 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(name = "idx_comment_novel_id", columnList = "novel_id"),
+        @Index(name = "idx_rating_user_id", columnList = "user_id")
+})
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,5 @@
 package com.example.readnovel.models.enumn;
 
-public enum BookStatusEnum {
+public enum NovelStatusEnum {
     ONGOING, COMPLETED, PAUSED, DROPPED
 }
