@@ -25,7 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_URLS = {"/api/login","/api/register","/api/user/books"};
+    private static final String[] PUBLIC_URLS = {"/api/login","/api/register","/api/user/novels"};
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
@@ -64,7 +64,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers(PUBLIC_URLS).permitAll()
                 .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())

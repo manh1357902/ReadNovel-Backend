@@ -36,11 +36,11 @@ public class JwtUtils {
                 .compact();
     }
     //tạo refresh token
-    public String generateRefreshToken(String email) {
+    public String generateRefreshToken(String email, Date expiration) {
         return Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis()+Long.parseLong(refreshExpiration)))
+                .setExpiration(expiration!=null? expiration: new Date(System.currentTimeMillis()+Long.parseLong(refreshExpiration)))
                 .signWith(getSignKey(refreshSecretKey))
                 .compact();
     }
@@ -55,6 +55,9 @@ public class JwtUtils {
         return Jwts.parserBuilder().setSigningKey(isRefresh ? getSignKey(refreshSecretKey) : getSignKey(accessSecretKey)).build().parseClaimsJws(token).getBody().getSubject();
     }
 
+    public Date getExpirationDateFromToken(String token, boolean isRefresh) {
+        return Jwts.parserBuilder().setSigningKey(isRefresh? getSignKey(refreshSecretKey): getSignKey(accessSecretKey)).build().parseClaimsJws(token).getBody().getExpiration();
+    }
     //kiểm tra token hợp lệ
     public boolean validateJwtToken(String token, boolean isRefresh) {
         try{
